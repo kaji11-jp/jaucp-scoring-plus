@@ -1,1 +1,0 @@
-Tauri Error: PluginInitialization("store", "Error deserializing 'plugins.store' within your Tauri configuration: invalid type: map, expected unit")
