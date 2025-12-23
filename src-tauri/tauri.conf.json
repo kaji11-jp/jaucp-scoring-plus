@@ -42,8 +42,5 @@
       "digestAlgorithm": "sha256",
       "timestampUrl": ""
     }
-  },
-  "plugins": {
-    "store": {}
   }
 }
