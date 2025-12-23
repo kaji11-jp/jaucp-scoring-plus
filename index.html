@@ -1,135 +1,138 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JAUCP Scoring Tool</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/src/styles.css" />
-  </head>
-  <body>
-    <div class="app-container">
-      <!-- ヘッダー -->
-      <header class="header">
-        <h1 class="header-title">
-          <span class="header-icon">📝</span>
-          JAUCP Scoring Tool
-        </h1>
-        <button id="settings-btn" class="btn btn-icon" title="設定">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </button>
-      </header>
 
-      <!-- メインコンテンツ -->
-      <main class="main">
-        <!-- 入力セクション -->
-        <section class="input-section">
-          <div class="section-header">
-            <h2>記事入力</h2>
-            <div class="model-selector">
-              <label for="model-select">モデル:</label>
-              <select id="model-select" disabled>
-                <option value="">APIキーを設定してください</option>
-              </select>
-            </div>
-          </div>
-          <textarea
-            id="article-input"
-            class="article-input"
-            placeholder="ここに記事のウィキテキストを入力してください...&#10;&#10;寄稿前の推敲用に、記事の品質をLLMで採点します。"
-          ></textarea>
-          <div class="input-actions">
-            <span id="char-count" class="char-count">0 文字</span>
-            <div class="action-buttons">
-              <button id="clear-btn" class="btn btn-secondary" type="button">クリア</button>
-              <button id="score-btn" class="btn btn-primary" disabled>
-                <span class="btn-text">採点する</span>
-                <span class="btn-loader hidden"></span>
-              </button>
-            </div>
-          </div>
-        </section>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JAUCP Scoring Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Source+Code+Pro:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
 
-        <!-- 結果セクション -->
-        <section id="result-section" class="result-section hidden">
-          <div class="result-header">
-            <h2>採点結果</h2>
-            <div class="result-meta">
-              <span id="result-category" class="category-badge"></span>
-              <span id="result-total" class="total-score"></span>
-            </div>
-          </div>
+<body>
+  <div class="app-container">
+    <!-- ヘッダー -->
+    <header class="header">
+      <h1 class="header-title">
+        <span class="header-icon">📝</span>
+        JAUCP Scoring Tool
+      </h1>
+      <button id="settings-btn" class="btn btn-icon" title="設定">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+          </path>
+        </svg>
+      </button>
+    </header>
 
-          <!-- スコアテーブル -->
-          <table class="score-table">
-            <thead>
-              <tr>
-                <th>評価軸</th>
-                <th>満点</th>
-                <th>得点</th>
-                <th>理由</th>
-              </tr>
-            </thead>
-            <tbody id="score-tbody">
-              <!-- 動的に生成 -->
-            </tbody>
-          </table>
-
-          <!-- 改善点 -->
-          <div id="advice-section" class="advice-section hidden">
-            <h3>改善点</h3>
-            <div id="advice-content" class="advice-content"></div>
-          </div>
-        </section>
-
-        <!-- エラー表示 -->
-        <div id="error-section" class="error-section hidden">
-          <div class="error-content">
-            <span class="error-icon">⚠️</span>
-            <span id="error-message"></span>
+    <!-- メインコンテンツ -->
+    <main class="main">
+      <!-- 入力セクション -->
+      <section class="input-section">
+        <div class="section-header">
+          <h2>記事入力</h2>
+          <div class="model-selector">
+            <img src="https://svgl.app/library/openrouter_dark.svg" alt="OpenRouter" class="provider-icon"
+              title="OpenRouter" />
+            <label for="model-select">モデル:</label>
+            <select id="model-select" disabled>
+              <option value="">APIキーを設定してください</option>
+            </select>
           </div>
         </div>
-      </main>
-
-      <!-- 設定モーダル -->
-      <dialog id="settings-dialog" class="settings-dialog">
-        <div class="dialog-content">
-          <div class="dialog-header">
-            <h2>設定</h2>
-            <button id="close-settings" class="btn btn-icon" title="閉じる">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
+        <textarea id="article-input" class="article-input"
+          placeholder="ここに記事のウィキテキストを入力してください...&#10;&#10;寄稿前の推敲用に、記事の品質をLLMで採点します。"></textarea>
+        <div class="input-actions">
+          <span id="char-count" class="char-count">0 文字</span>
+          <div class="action-buttons">
+            <button id="clear-btn" class="btn btn-secondary" type="button">クリア</button>
+            <button id="score-btn" class="btn btn-primary" disabled>
+              <span class="btn-text">採点する</span>
+              <span class="btn-loader hidden"></span>
             </button>
           </div>
-          <form id="settings-form" class="dialog-body">
-            <div class="form-group">
-              <label for="api-key-input">OpenRouter API キー</label>
-              <input
-                type="password"
-                id="api-key-input"
-                class="form-input"
-                placeholder="sk-or-..."
-              />
-              <p class="form-hint">
-                <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a> でAPIキーを取得できます
-              </p>
-            </div>
-            <div class="dialog-actions">
-              <button type="button" id="cancel-settings" class="btn btn-secondary">キャンセル</button>
-              <button type="submit" class="btn btn-primary">保存</button>
-            </div>
-          </form>
         </div>
-      </dialog>
-    </div>
+      </section>
 
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+      <!-- 結果セクション -->
+      <section id="result-section" class="result-section hidden">
+        <div class="result-header">
+          <h2>採点結果</h2>
+          <div class="result-meta">
+            <span id="result-category" class="category-badge"></span>
+            <span id="result-total" class="total-score"></span>
+          </div>
+        </div>
+
+        <!-- スコアテーブル -->
+        <table class="score-table">
+          <thead>
+            <tr>
+              <th>評価軸</th>
+              <th>満点</th>
+              <th>得点</th>
+              <th>理由</th>
+            </tr>
+          </thead>
+          <tbody id="score-tbody">
+            <!-- 動的に生成 -->
+          </tbody>
+        </table>
+
+        <!-- 改善点 -->
+        <div id="advice-section" class="advice-section hidden">
+          <h3>改善点</h3>
+          <div id="advice-content" class="advice-content"></div>
+        </div>
+      </section>
+
+      <!-- エラー表示 -->
+      <div id="error-section" class="error-section hidden">
+        <div class="error-content">
+          <span class="error-icon">⚠️</span>
+          <span id="error-message"></span>
+        </div>
+      </div>
+    </main>
+
+    <!-- 設定モーダル -->
+    <dialog id="settings-dialog" class="settings-dialog">
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <h2>設定</h2>
+          <button id="close-settings" class="btn btn-icon" title="閉じる">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <form id="settings-form" class="dialog-body">
+          <div class="form-group">
+            <label for="api-key-input">OpenRouter API キー</label>
+            <input type="password" id="api-key-input" class="form-input" placeholder="sk-or-..." />
+            <p class="form-hint">
+              <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a> でAPIキーを取得できます
+            </p>
+          </div>
+          <div class="dialog-actions">
+            <button type="button" id="cancel-settings" class="btn btn-secondary">キャンセル</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>
