@@ -1,31 +1,27 @@
 import { ResultAsync, errAsync, okAsync } from "neverthrow";
-import { OpenRouter } from "@openrouter/sdk";
 import { OpenRouterModelsResponseSchema, type OpenRouterModel } from "./schemas";
 
 /**
- * OpenRouter SDKインスタンスを作成
- */
-function createOpenRouterClient(apiKey: string): OpenRouter {
-    return new OpenRouter({
-        apiKey,
-    });
-}
-
-/**
  * OpenRouter APIから利用可能なモデル一覧を取得
- * OpenRouter SDK の models.list() を使用
+ * Cline方式の動的モデル取得
  */
 export function fetchAvailableModels(
     apiKey: string
 ): ResultAsync<OpenRouterModel[], Error> {
-    const openrouter = createOpenRouterClient(apiKey);
-
     return ResultAsync.fromPromise(
-        openrouter.models.list(),
+        fetch("https://openrouter.ai/api/v1/models", {
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+            },
+        }).then((response) => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        }),
         (error) => new Error(`モデル取得エラー: ${error}`)
-    ).andThen((response) => {
-        // スキーマ検証
-        const parsed = OpenRouterModelsResponseSchema.safeParse(response);
+    ).andThen((data) => {
+        const parsed = OpenRouterModelsResponseSchema.safeParse(data);
         if (!parsed.success) {
             return errAsync(new Error(`スキーマ検証エラー: ${parsed.error.message}`));
         }
@@ -52,5 +48,3 @@ export function formatModelPricing(model: OpenRouterModel): string {
     const completionPrice = parseFloat(model.pricing.completion) * 1_000_000;
     return `$${promptPrice.toFixed(2)}/${completionPrice.toFixed(2)} per 1M tokens`;
 }
-
-export { createOpenRouterClient };

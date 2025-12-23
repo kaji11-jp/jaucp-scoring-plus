@@ -11,7 +11,6 @@
     "lint": "oxlint ."
   },
   "dependencies": {
-    "@openrouter/sdk": "^0.3.10",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-store": "^2",
