@@ -1,0 +1,28 @@
+{
+  "name": "jaucp-scoring",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "lint": "oxlint ."
+  },
+  "dependencies": {
+    "@openrouter/sdk": "^0.3.10",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-store": "^2",
+    "@zod/zod": "npm:@jsr/zod__zod@^4.2.1",
+    "neverthrow": "^8.1.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^22",
+    "oxlint": "^0.15",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  }
+}
