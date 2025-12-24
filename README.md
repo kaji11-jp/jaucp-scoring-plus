@@ -54,7 +54,7 @@
 
 ### 📦 簡単インストール（Windows）
 
-1. [[Releases](https://github.com/kongyo2/jaucp-scoring/releases)](https://github.com/kongyo2/jaucp-scoring/releases)ページにアクセス
+1. [[Releases](https://github.com/kongyo2/jaucp-scoring/releases)](https://github.com/kongyo2/jaucp-scoring/releases) ページにアクセス
 2. 最新版の `.msi` または `.exe` ファイルをダウンロード
 3. ダウンロードしたファイルを実行してインストール
 
@@ -72,7 +72,7 @@
 
 **Windowsの場合:**
 
-1. [[Node.js公式サイト](https://nodejs.org/)](https://nodejs.org/)にアクセス
+1. [[Node.js公式サイト](https://nodejs.org/)](https://nodejs.org/) にアクセス
 2. 「LTS」版（推奨版）をダウンロード
 3. インストーラーを実行し、すべてデフォルトのままインストール
 
@@ -97,7 +97,7 @@ npm --version
 
 **Windowsの場合:**
 
-1. [[rustup公式サイト](https://rustup.rs/)](https://rustup.rs/)にアクセス
+1. [[rustup公式サイト](https://rustup.rs/)](https://rustup.rs/) にアクセス
 2. 「rustup-init.exe」をダウンロードして実行
 3. コマンドプロンプトが開くので、`1`を入力してEnter（デフォルトインストール）
 
@@ -183,7 +183,7 @@ npm run tauri build
 
 1. [OpenRouter](https://openrouter.ai/)にアクセス
 2. 「Sign In」から新規登録（GitHubアカウントなどでログイン可能）
-3. ログイン後、[[API Keys](https://openrouter.ai/keys)](https://openrouter.ai/keys)ページに移動
+3. ログイン後、[[API Keys](https://openrouter.ai/keys)](https://openrouter.ai/keys) ページに移動
 4. 「Create Key」をクリックしてAPIキーを作成
 5. 表示されたキー（`sk-or-...`で始まる文字列）をコピー
 
@@ -197,7 +197,7 @@ npm run tauri build
 
 Googleの提供するAIサービスです。
 
-1. [[Google AI Studio](https://aistudio.google.com/apikey)](https://aistudio.google.com/apikey)にアクセス
+1. [[Google AI Studio](https://aistudio.google.com/apikey)](https://aistudio.google.com/apikey) にアクセス
 2. Googleアカウントでログイン
 3. 「Get API Key」→「Create API key」をクリック
 4. 表示されたキー（`AIza...`で始まる文字列）をコピー
