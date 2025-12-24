@@ -1,6 +1,6 @@
 import { load, Store } from "@tauri-apps/plugin-store";
 import { ResultAsync, okAsync } from "neverthrow";
-import { SettingsSchema, type Settings } from "./schemas";
+import { SettingsSchema, type Settings, type ProviderType } from "./schemas";
 
 const STORE_PATH = "settings.json";
 
@@ -17,22 +17,42 @@ async function getStore(): Promise<Store> {
 }
 
 /**
+ * デフォルト設定
+ */
+const DEFAULT_SETTINGS: Settings = {
+    provider: "openrouter",
+    openrouterApiKey: undefined,
+    geminiApiKey: undefined,
+    selectedModel: undefined,
+};
+
+/**
  * 設定を読み込む
  */
 export function loadSettings(): ResultAsync<Settings, Error> {
     return ResultAsync.fromPromise(
         (async () => {
             const store = await getStore();
-            const apiKey = await store.get<string>("apiKey");
+            const provider = await store.get<ProviderType>("provider");
+            const openrouterApiKey = await store.get<string>("openrouterApiKey");
+            const geminiApiKey = await store.get<string>("geminiApiKey");
             const selectedModel = await store.get<string>("selectedModel");
-            return { apiKey, selectedModel };
+
+            // 旧形式からのマイグレーション
+            const legacyApiKey = await store.get<string>("apiKey");
+
+            return {
+                provider: provider || "openrouter",
+                openrouterApiKey: openrouterApiKey || legacyApiKey,
+                geminiApiKey,
+                selectedModel,
+            };
         })(),
         (error) => new Error(`設定読み込みエラー: ${error}`)
     ).andThen((data) => {
         const parsed = SettingsSchema.safeParse(data);
         if (!parsed.success) {
-            // スキーマエラーでもデフォルト値を返す
-            return okAsync({ apiKey: undefined, selectedModel: undefined });
+            return okAsync(DEFAULT_SETTINGS);
         }
         return okAsync(parsed.data);
     });
@@ -45,8 +65,14 @@ export function saveSettings(settings: Partial<Settings>): ResultAsync<void, Err
     return ResultAsync.fromPromise(
         (async () => {
             const store = await getStore();
-            if (settings.apiKey !== undefined) {
-                await store.set("apiKey", settings.apiKey);
+            if (settings.provider !== undefined) {
+                await store.set("provider", settings.provider);
+            }
+            if (settings.openrouterApiKey !== undefined) {
+                await store.set("openrouterApiKey", settings.openrouterApiKey);
+            }
+            if (settings.geminiApiKey !== undefined) {
+                await store.set("geminiApiKey", settings.geminiApiKey);
             }
             if (settings.selectedModel !== undefined) {
                 await store.set("selectedModel", settings.selectedModel);
@@ -58,8 +84,23 @@ export function saveSettings(settings: Partial<Settings>): ResultAsync<void, Err
 }
 
 /**
- * APIキーが設定されているか確認
+ * 現在のプロバイダのAPIキーが設定されているか確認
  */
 export function hasApiKey(): ResultAsync<boolean, Error> {
-    return loadSettings().map((settings) => !!settings.apiKey);
+    return loadSettings().map((settings) => {
+        if (settings.provider === "gemini") {
+            return !!settings.geminiApiKey;
+        }
+        return !!settings.openrouterApiKey;
+    });
+}
+
+/**
+ * 現在のプロバイダのAPIキーを取得
+ */
+export function getCurrentApiKey(settings: Settings): string | undefined {
+    if (settings.provider === "gemini") {
+        return settings.geminiApiKey;
+    }
+    return settings.openrouterApiKey;
 }

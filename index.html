@@ -117,10 +117,24 @@
         </div>
         <form id="settings-form" class="dialog-body">
           <div class="form-group">
-            <label for="api-key-input">OpenRouter API キー</label>
-            <input type="password" id="api-key-input" class="form-input" placeholder="sk-or-..." />
+            <label for="provider-select">プロバイダ</label>
+            <select id="provider-select" class="form-select">
+              <option value="openrouter">OpenRouter</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </div>
+          <div class="form-group" id="openrouter-key-group">
+            <label for="openrouter-key-input">OpenRouter API キー</label>
+            <input type="password" id="openrouter-key-input" class="form-input" placeholder="sk-or-..." />
             <p class="form-hint">
               <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a> でAPIキーを取得できます
+            </p>
+          </div>
+          <div class="form-group hidden" id="gemini-key-group">
+            <label for="gemini-key-input">Gemini API キー</label>
+            <input type="password" id="gemini-key-input" class="form-input" placeholder="AIza..." />
+            <p class="form-hint">
+              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> でAPIキーを取得できます
             </p>
           </div>
           <div class="dialog-actions">

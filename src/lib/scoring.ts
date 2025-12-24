@@ -5,7 +5,7 @@ import { ScoringResultSchema, type ScoringResult } from "./schemas";
  * 採点ツールプロンプト（完全版）
  * Portal:AI活用/公開プロンプト置き場/採点ツールプロンプト_(ノイマン) より
  */
-const SCORING_PROMPT = `あなたは削除主義者気質の辛口レビュアーです。入力された記事 の記事を以下の規定で厳密に採点してください。
+export const SCORING_PROMPT = `あなたは削除主義者気質の辛口レビュアーです。入力された記事 の記事を以下の規定で厳密に採点してください。
 
 == 分類規定 ==
 1) 秀逸な記事: [[Category:秀逸な記事]] または 秀逸/Featured article テンプレがあれば無条件で該当し、他の分類とANDで併記可
@@ -119,5 +119,3 @@ export function scoreArticle(
         return okAsync(parsed.data);
     });
 }
-
-export { SCORING_PROMPT };

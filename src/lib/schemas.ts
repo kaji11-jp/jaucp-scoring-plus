@@ -1,6 +1,12 @@
 import { z } from "@zod/zod";
 
 /**
+ * プロバイダタイプ
+ */
+export const ProviderTypeSchema = z.enum(["openrouter", "gemini"]);
+export type ProviderType = z.infer<typeof ProviderTypeSchema>;
+
+/**
  * 採点結果の詳細スキーマ
  */
 export const ScoringDetailsSchema = z.object({
@@ -57,10 +63,33 @@ export const OpenRouterModelsResponseSchema = z.object({
 export type OpenRouterModel = z.infer<typeof OpenRouterModelSchema>;
 
 /**
+ * Gemini モデル情報のスキーマ
+ */
+export const GeminiModelSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+});
+
+export type GeminiModel = z.infer<typeof GeminiModelSchema>;
+
+/**
+ * 共通モデル情報（UI表示用）
+ */
+export const ModelInfoSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    provider: ProviderTypeSchema,
+});
+
+export type ModelInfo = z.infer<typeof ModelInfoSchema>;
+
+/**
  * 設定のスキーマ
  */
 export const SettingsSchema = z.object({
-    apiKey: z.string().optional(),
+    provider: ProviderTypeSchema.optional().default("openrouter"),
+    openrouterApiKey: z.string().optional(),
+    geminiApiKey: z.string().optional(),
     selectedModel: z.string().optional(),
 });
 

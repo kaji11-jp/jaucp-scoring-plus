@@ -1,7 +1,8 @@
-import { loadSettings, saveSettings } from "./lib/settings";
+import { loadSettings, saveSettings, getCurrentApiKey } from "./lib/settings";
 import { fetchAvailableModels, getModelDisplayName } from "./lib/models";
 import { scoreArticle } from "./lib/scoring";
-import type { ScoringResult } from "./lib/schemas";
+import { fetchGeminiModels, scoreArticleWithGemini } from "./lib/gemini";
+import type { ScoringResult, ProviderType, Settings } from "./lib/schemas";
 
 // DOM Elements
 const settingsBtn = document.getElementById("settings-btn") as HTMLButtonElement;
@@ -9,7 +10,12 @@ const settingsDialog = document.getElementById("settings-dialog") as HTMLDialogE
 const closeSettingsBtn = document.getElementById("close-settings") as HTMLButtonElement;
 const cancelSettingsBtn = document.getElementById("cancel-settings") as HTMLButtonElement;
 const settingsForm = document.getElementById("settings-form") as HTMLFormElement;
-const apiKeyInput = document.getElementById("api-key-input") as HTMLInputElement;
+const providerSelect = document.getElementById("provider-select") as HTMLSelectElement;
+const openrouterKeyInput = document.getElementById("openrouter-key-input") as HTMLInputElement;
+const geminiKeyInput = document.getElementById("gemini-key-input") as HTMLInputElement;
+const openrouterKeyGroup = document.getElementById("openrouter-key-group") as HTMLDivElement;
+const geminiKeyGroup = document.getElementById("gemini-key-group") as HTMLDivElement;
+const providerIcon = document.querySelector(".provider-icon") as HTMLImageElement;
 const modelSelect = document.getElementById("model-select") as HTMLSelectElement;
 const articleInput = document.getElementById("article-input") as HTMLTextAreaElement;
 const charCount = document.getElementById("char-count") as HTMLSpanElement;
@@ -24,9 +30,19 @@ const errorSection = document.getElementById("error-section") as HTMLElement;
 const errorMessage = document.getElementById("error-message") as HTMLSpanElement;
 
 // State
-let currentApiKey = "";
-let currentModel = "";
+let currentSettings: Settings = {
+  provider: "openrouter",
+  openrouterApiKey: undefined,
+  geminiApiKey: undefined,
+  selectedModel: undefined,
+};
 let isScoring = false;
+
+// Provider icons
+const PROVIDER_ICONS: Record<ProviderType, string> = {
+  openrouter: "https://svgl.app/library/openrouter_dark.svg",
+  gemini: "https://svgl.app/library/gemini.svg",
+};
 
 // Evaluation axis info
 const EVAL_AXES = [
@@ -41,94 +57,98 @@ const EVAL_AXES = [
  * 初期化
  */
 async function init() {
-  // イベントリスナー設定
   setupEventListeners();
 
-  // 設定を読み込む
   const settingsResult = await loadSettings();
   settingsResult.match(
     (settings) => {
-      if (settings.apiKey) {
-        currentApiKey = settings.apiKey;
-        apiKeyInput.value = settings.apiKey;
-        loadModels();
-      }
-      if (settings.selectedModel) {
-        currentModel = settings.selectedModel;
-      }
+      currentSettings = settings;
+      updateProviderUI();
+      loadModels();
     },
     (error) => {
       console.error("設定読み込みエラー:", error);
     }
   );
 
-  // 文字数カウント更新
   updateCharCount();
+}
+
+/**
+ * プロバイダUIを更新
+ */
+function updateProviderUI() {
+  providerIcon.src = PROVIDER_ICONS[currentSettings.provider];
+  providerIcon.alt = currentSettings.provider === "gemini" ? "Gemini" : "OpenRouter";
+}
+
+/**
+ * 設定ダイアログのプロバイダ表示を切り替え
+ */
+function toggleProviderFields() {
+  const isGemini = providerSelect.value === "gemini";
+  openrouterKeyGroup.classList.toggle("hidden", isGemini);
+  geminiKeyGroup.classList.toggle("hidden", !isGemini);
 }
 
 /**
  * イベントリスナー設定
  */
 function setupEventListeners() {
-  // 設定ダイアログ
   settingsBtn.addEventListener("click", () => {
+    providerSelect.value = currentSettings.provider;
+    openrouterKeyInput.value = currentSettings.openrouterApiKey || "";
+    geminiKeyInput.value = currentSettings.geminiApiKey || "";
+    toggleProviderFields();
     settingsDialog.showModal();
   });
 
-  closeSettingsBtn.addEventListener("click", () => {
-    settingsDialog.close();
-  });
-
-  cancelSettingsBtn.addEventListener("click", () => {
-    settingsDialog.close();
-  });
+  closeSettingsBtn.addEventListener("click", () => settingsDialog.close());
+  cancelSettingsBtn.addEventListener("click", () => settingsDialog.close());
 
   settingsDialog.addEventListener("click", (e) => {
-    if (e.target === settingsDialog) {
-      settingsDialog.close();
-    }
+    if (e.target === settingsDialog) settingsDialog.close();
   });
+
+  providerSelect.addEventListener("change", toggleProviderFields);
 
   settingsForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const newApiKey = apiKeyInput.value.trim();
-    if (newApiKey !== currentApiKey) {
-      currentApiKey = newApiKey;
-      const result = await saveSettings({ apiKey: newApiKey });
-      result.match(
-        () => {
-          loadModels();
-        },
-        (error) => {
-          showError(`設定保存エラー: ${error.message}`);
-        }
-      );
-    }
+
+    const newSettings: Partial<Settings> = {
+      provider: providerSelect.value as ProviderType,
+      openrouterApiKey: openrouterKeyInput.value.trim() || undefined,
+      geminiApiKey: geminiKeyInput.value.trim() || undefined,
+    };
+
+    const result = await saveSettings(newSettings);
+    result.match(
+      () => {
+        currentSettings = { ...currentSettings, ...newSettings };
+        updateProviderUI();
+        loadModels();
+      },
+      (error) => showError(`設定保存エラー: ${error.message}`)
+    );
     settingsDialog.close();
   });
 
-  // モデル選択
   modelSelect.addEventListener("change", async () => {
-    currentModel = modelSelect.value;
-    await saveSettings({ selectedModel: currentModel });
+    currentSettings.selectedModel = modelSelect.value;
+    await saveSettings({ selectedModel: currentSettings.selectedModel });
     updateScoreButtonState();
   });
 
-  // 記事入力
   articleInput.addEventListener("input", () => {
     updateCharCount();
     updateScoreButtonState();
     hideError();
   });
 
-  // 採点ボタン
   scoreBtn.addEventListener("click", () => {
-    if (!isScoring) {
-      performScoring();
-    }
+    if (!isScoring) performScoring();
   });
 
-  // クリアボタン
   const clearBtn = document.getElementById("clear-btn") as HTMLButtonElement;
   clearBtn.addEventListener("click", () => {
     articleInput.value = "";
@@ -143,7 +163,9 @@ function setupEventListeners() {
  * モデル一覧を読み込む
  */
 async function loadModels() {
-  if (!currentApiKey) {
+  const apiKey = getCurrentApiKey(currentSettings);
+
+  if (!apiKey) {
     modelSelect.innerHTML = '<option value="">APIキーを設定してください</option>';
     modelSelect.disabled = true;
     return;
@@ -152,24 +174,24 @@ async function loadModels() {
   modelSelect.innerHTML = '<option value="">読み込み中...</option>';
   modelSelect.disabled = true;
 
-  const result = await fetchAvailableModels(currentApiKey);
+  const result = currentSettings.provider === "gemini"
+    ? await fetchGeminiModels(apiKey)
+    : await fetchAvailableModels(apiKey);
+
   result.match(
     (models) => {
       modelSelect.innerHTML = models
-        .map(
-          (m) =>
-            `<option value="${m.id}"${m.id === currentModel ? " selected" : ""}>${getModelDisplayName(m)}</option>`
-        )
+        .map((m) => {
+          const name = "name" in m ? m.name : getModelDisplayName(m as never);
+          return `<option value="${m.id}"${m.id === currentSettings.selectedModel ? " selected" : ""}>${name}</option>`;
+        })
         .join("");
       modelSelect.disabled = false;
 
-      // 保存されているモデルがない場合、デフォルトを設定
-      if (!currentModel && models.length > 0) {
-        // GPT-4o を優先的に選択
-        const defaultModel = models.find((m) => m.id.includes("gpt-4o")) || models[0];
-        currentModel = defaultModel.id;
-        modelSelect.value = currentModel;
-        saveSettings({ selectedModel: currentModel });
+      if (!currentSettings.selectedModel && models.length > 0) {
+        currentSettings.selectedModel = models[0].id;
+        modelSelect.value = currentSettings.selectedModel;
+        saveSettings({ selectedModel: currentSettings.selectedModel });
       }
 
       updateScoreButtonState();
@@ -194,8 +216,8 @@ function updateCharCount() {
  */
 function updateScoreButtonState() {
   const hasContent = articleInput.value.trim().length > 0;
-  const hasModel = !!currentModel;
-  const hasApiKey = !!currentApiKey;
+  const hasModel = !!currentSettings.selectedModel;
+  const hasApiKey = !!getCurrentApiKey(currentSettings);
   scoreBtn.disabled = !hasContent || !hasModel || !hasApiKey || isScoring;
 }
 
@@ -215,15 +237,25 @@ async function performScoring() {
   hideError();
   resultSection.classList.add("hidden");
 
-  const result = await scoreArticle(currentApiKey, currentModel, articleInput.value);
+  const apiKey = getCurrentApiKey(currentSettings);
+  const model = currentSettings.selectedModel;
+
+  if (!apiKey || !model) {
+    showError("APIキーまたはモデルが設定されていません");
+    isScoring = false;
+    btnText.textContent = "採点する";
+    btnLoader.classList.add("hidden");
+    updateScoreButtonState();
+    return;
+  }
+
+  const result = currentSettings.provider === "gemini"
+    ? await scoreArticleWithGemini(apiKey, model, articleInput.value)
+    : await scoreArticle(apiKey, model, articleInput.value);
 
   result.match(
-    (scoring) => {
-      displayResult(scoring);
-    },
-    (error) => {
-      showError(error.message);
-    }
+    (scoring) => displayResult(scoring),
+    (error) => showError(error.message)
   );
 
   isScoring = false;
@@ -236,10 +268,8 @@ async function performScoring() {
  * 結果を表示
  */
 function displayResult(result: ScoringResult) {
-  // カテゴリ
   resultCategory.textContent = result.category;
 
-  // 合計点
   resultTotal.textContent = `${result.total} / 100`;
   resultTotal.className = "total-score";
   if (result.total >= 80) {
@@ -250,7 +280,6 @@ function displayResult(result: ScoringResult) {
     resultTotal.classList.add("score-low");
   }
 
-  // スコアテーブル
   scoreTbody.innerHTML = EVAL_AXES.map(({ key, label, max }) => {
     const score = result.details[key as keyof typeof result.details];
     const reason = result.reasons[key as keyof typeof result.reasons];
@@ -264,7 +293,6 @@ function displayResult(result: ScoringResult) {
     `;
   }).join("");
 
-  // 改善点
   if (result.advice) {
     adviceContent.textContent = result.advice;
     adviceSection.classList.remove("hidden");
