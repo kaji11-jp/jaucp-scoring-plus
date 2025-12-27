@@ -1,0 +1,32 @@
+
+/* Prompt Editor */
+.form-textarea {
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: var(--space-sm) var(--space-md);
+  resize: vertical;
+  min-height: 150px;
+  transition: border-color var(--transition-fast);
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--accent-secondary);
+}
+
+.settings-group-prompt {
+  border-top: 1px solid var(--border-color);
+  padding-top: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+.prompt-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-xs);
+}

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "JAUCP Scoring Tool",
+  "productName": "JAUCP Scoring Tool Plus",
   "version": "0.1.0",
-  "identifier": "info.uncyclopedia.jaucp-scoring",
+  "identifier": "info.uncyclopedia.jaucp-scoring-plus",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "JAUCP Scoring Tool",
+        "title": "JAUCP Scoring Tool Plus",
         "width": 1000,
         "height": 800,
         "minWidth": 800,
@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' https://openrouter.ai https://*.openrouter.ai https://generativelanguage.googleapis.com https://ja.wikipedia.org https://en.wikipedia.org; img-src 'self' https://svgl.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com"
+      "csp": "default-src 'self'; connect-src 'self' https://openrouter.ai https://*.openrouter.ai https://generativelanguage.googleapis.com https://api.cerebras.ai https://ja.wikipedia.org https://en.wikipedia.org; img-src 'self' https://svgl.app https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com"
     }
   },
   "bundle": {

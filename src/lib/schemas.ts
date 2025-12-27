@@ -36,7 +36,7 @@ export const ScoringResultSchema = z.object({
     total: z.number().min(0).max(100),
     details: ScoringDetailsSchema,
     reasons: ScoringReasonsSchema,
-    advice: z.string().optional(),
+    advice: z.string().nullish(),
 });
 
 export type ScoringDetails = z.infer<typeof ScoringDetailsSchema>;
@@ -102,6 +102,21 @@ export const SettingsSchema = z.object({
     geminiApiKey: z.string().optional(),
     cerebrasApiKey: z.string().optional(),
     selectedModel: z.string().optional(),
+    systemPrompt: z.string().optional(),
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
+
+/**
+ * 履歴アイテムのスキーマ
+ */
+export const HistoryItemSchema = z.object({
+    id: z.string(),
+    timestamp: z.number(),
+    title: z.string(),
+    category: z.string(),
+    total: z.number(),
+    result: ScoringResultSchema,
+});
+
+export type HistoryItem = z.infer<typeof HistoryItemSchema>;

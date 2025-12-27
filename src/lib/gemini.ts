@@ -1,7 +1,6 @@
 import { ResultAsync, errAsync, okAsync } from "neverthrow";
 import { GoogleGenAI } from "@google/genai";
 import { ScoringResultSchema, type ScoringResult, type GeminiModel } from "./schemas";
-import { SCORING_PROMPT } from "./scoring";
 
 /**
  * Gemini APIから利用可能なモデル一覧を動的取得
@@ -46,7 +45,8 @@ export function fetchGeminiModels(apiKey: string): ResultAsync<GeminiModel[], Er
 export function scoreArticleWithGemini(
     apiKey: string,
     model: string,
-    articleContent: string
+    articleContent: string,
+    systemPrompt: string
 ): ResultAsync<ScoringResult, Error> {
     const ai = new GoogleGenAI({ apiKey });
 
@@ -56,7 +56,7 @@ export function scoreArticleWithGemini(
                 model,
                 contents: articleContent,
                 config: {
-                    systemInstruction: SCORING_PROMPT,
+                    systemInstruction: systemPrompt,
                     temperature: 0.3,
                 },
             });

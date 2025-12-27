@@ -5,6 +5,9 @@ import { fetchGeminiModels, scoreArticleWithGemini } from "./lib/gemini";
 import { fetchCerebrasModels, scoreArticleWithCerebras } from "./lib/cerebras";
 import { checkWikipediaJa, checkWikipediaEn, generateTemplates, type WikipediaCheckResult } from "./lib/wikipedia";
 import type { ScoringResult, ProviderType, Settings } from "./lib/schemas";
+import { DEFAULT_SYSTEM_PROMPT, HUMORLESS_SYSTEM_PROMPT } from "./lib/prompts";
+import { formatAsWikitext } from "./lib/export";
+import { addHistory, getHistory, clearHistory } from "./lib/history";
 
 // DOM Elements
 const settingsBtn = document.getElementById("settings-btn") as HTMLButtonElement;
@@ -19,12 +22,16 @@ const openrouterKeyGroup = document.getElementById("openrouter-key-group") as HT
 const geminiKeyGroup = document.getElementById("gemini-key-group") as HTMLDivElement;
 const cerebrasKeyInput = document.getElementById("cerebras-key-input") as HTMLInputElement;
 const cerebrasKeyGroup = document.getElementById("cerebras-key-group") as HTMLDivElement;
+const systemPromptInput = document.getElementById("system-prompt-input") as HTMLTextAreaElement;
+const promptPresetSelect = document.getElementById("prompt-preset-select") as HTMLSelectElement;
+const resetPromptBtn = document.getElementById("reset-prompt-btn") as HTMLButtonElement;
 const providerIcon = document.querySelector(".provider-icon") as HTMLImageElement;
 const modelSelect = document.getElementById("model-select") as HTMLSelectElement;
 const articleInput = document.getElementById("article-input") as HTMLTextAreaElement;
 const charCount = document.getElementById("char-count") as HTMLSpanElement;
 const scoreBtn = document.getElementById("score-btn") as HTMLButtonElement;
 const resultSection = document.getElementById("result-section") as HTMLElement;
+const exportWikiBtn = document.getElementById("export-wiki-btn") as HTMLButtonElement;
 const resultCategory = document.getElementById("result-category") as HTMLSpanElement;
 const resultTotal = document.getElementById("result-total") as HTMLSpanElement;
 const scoreTbody = document.getElementById("score-tbody") as HTMLTableSectionElement;
@@ -32,6 +39,8 @@ const adviceSection = document.getElementById("advice-section") as HTMLElement;
 const adviceContent = document.getElementById("advice-content") as HTMLElement;
 const errorSection = document.getElementById("error-section") as HTMLElement;
 const errorMessage = document.getElementById("error-message") as HTMLSpanElement;
+const historyList = document.getElementById("history-list") as HTMLDivElement;
+const clearHistoryBtn = document.getElementById("clear-history-btn") as HTMLButtonElement;
 
 // State
 let currentSettings: Settings = {
@@ -40,8 +49,10 @@ let currentSettings: Settings = {
   geminiApiKey: undefined,
   cerebrasApiKey: undefined,
   selectedModel: undefined,
+  systemPrompt: DEFAULT_SYSTEM_PROMPT,
 };
 let isScoring = false;
+let currentResult: ScoringResult | null = null;
 
 // Provider icons
 const PROVIDER_ICONS: Record<ProviderType, string> = {
@@ -112,8 +123,40 @@ function setupEventListeners() {
     openrouterKeyInput.value = currentSettings.openrouterApiKey || "";
     geminiKeyInput.value = currentSettings.geminiApiKey || "";
     cerebrasKeyInput.value = currentSettings.cerebrasApiKey || "";
+    
+    const currentPrompt = currentSettings.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+    systemPromptInput.value = currentPrompt;
+
+    if (currentPrompt === DEFAULT_SYSTEM_PROMPT) {
+      promptPresetSelect.value = "default";
+    } else if (currentPrompt === HUMORLESS_SYSTEM_PROMPT) {
+      promptPresetSelect.value = "humorless";
+    } else {
+      promptPresetSelect.value = "custom";
+    }
+
     toggleProviderFields();
     settingsDialog.showModal();
+  });
+
+  promptPresetSelect.addEventListener("change", () => {
+    const val = promptPresetSelect.value;
+    let newPrompt = "";
+    if (val === "default") newPrompt = DEFAULT_SYSTEM_PROMPT;
+    if (val === "humorless") newPrompt = HUMORLESS_SYSTEM_PROMPT;
+    
+    if (newPrompt) {
+      if (systemPromptInput.value !== newPrompt && systemPromptInput.value.trim() !== "") {
+         if (!confirm("プロンプトを上書きしますか？現在の編集内容は失われます。")) {
+             return;
+         }
+      }
+      systemPromptInput.value = newPrompt;
+    }
+  });
+
+  systemPromptInput.addEventListener("input", () => {
+    promptPresetSelect.value = "custom";
   });
 
   closeSettingsBtn.addEventListener("click", () => settingsDialog.close());
@@ -121,6 +164,28 @@ function setupEventListeners() {
 
   settingsDialog.addEventListener("click", (e) => {
     if (e.target === settingsDialog) settingsDialog.close();
+  });
+
+  exportWikiBtn.addEventListener("click", () => {
+    if (!currentResult) return;
+    const text = formatAsWikitext(currentResult);
+    navigator.clipboard.writeText(text);
+    const originalText = exportWikiBtn.textContent;
+    exportWikiBtn.textContent = "コピーしました！";
+    setTimeout(() => {
+      exportWikiBtn.textContent = originalText;
+    }, 2000);
+  });
+
+  resetPromptBtn.addEventListener("click", () => {
+    const val = promptPresetSelect.value;
+    let targetPrompt = DEFAULT_SYSTEM_PROMPT;
+    if (val === "humorless") targetPrompt = HUMORLESS_SYSTEM_PROMPT;
+    
+    if (confirm("プロンプトをリセットしますか？")) {
+      systemPromptInput.value = targetPrompt;
+      if (val === "custom") promptPresetSelect.value = "default";
+    }
   });
 
   providerSelect.addEventListener("change", toggleProviderFields);
@@ -133,6 +198,7 @@ function setupEventListeners() {
       openrouterApiKey: openrouterKeyInput.value.trim() || undefined,
       geminiApiKey: geminiKeyInput.value.trim() || undefined,
       cerebrasApiKey: cerebrasKeyInput.value.trim() || undefined,
+      systemPrompt: systemPromptInput.value.trim() || undefined,
     };
 
     const result = await saveSettings(newSettings);
@@ -186,7 +252,21 @@ function setupEventListeners() {
       btn.classList.add("active");
       document.getElementById(`tab-${tabId}`)?.classList.remove("hidden");
       hideError();
+
+      if (tabId === "history") {
+        renderHistoryList();
+      }
     });
+  });
+
+  clearHistoryBtn.addEventListener("click", async () => {
+    if (confirm("全ての履歴を削除しますか？この操作は取り消せません。")) {
+      const result = await clearHistory();
+      result.match(
+        () => renderHistoryList(),
+        (e) => alert(`削除エラー: ${e.message}`)
+      );
+    }
   });
 
   // Wikipedia存在確認
@@ -401,6 +481,7 @@ async function performScoring() {
 
   const apiKey = getCurrentApiKey(currentSettings);
   const model = currentSettings.selectedModel;
+  const systemPrompt = currentSettings.systemPrompt || DEFAULT_SYSTEM_PROMPT;
 
   if (!apiKey || !model) {
     showError("APIキーまたはモデルが設定されていません");
@@ -413,15 +494,22 @@ async function performScoring() {
 
   let result;
   if (currentSettings.provider === "gemini") {
-    result = await scoreArticleWithGemini(apiKey, model, articleInput.value);
+    result = await scoreArticleWithGemini(apiKey, model, articleInput.value, systemPrompt);
   } else if (currentSettings.provider === "cerebras") {
-    result = await scoreArticleWithCerebras(apiKey, model, articleInput.value);
+    result = await scoreArticleWithCerebras(apiKey, model, articleInput.value, systemPrompt);
   } else {
-    result = await scoreArticle(apiKey, model, articleInput.value);
+    result = await scoreArticle(apiKey, model, articleInput.value, systemPrompt);
   }
 
   result.match(
-    (scoring) => displayResult(scoring),
+    (scoring) => {
+      currentResult = scoring;
+      displayResult(scoring);
+      addHistory(scoring, articleInput.value).match(
+        () => {},
+        (e) => console.error("履歴保存エラー:", e)
+      );
+    },
     (error) => showError(error.message)
   );
 
@@ -492,6 +580,57 @@ function escapeHtml(text: string): string {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
+}
+
+/**
+ * 履歴リストを描画
+ */
+async function renderHistoryList() {
+  historyList.innerHTML = '<div class="loader">読み込み中...</div>';
+  
+  const result = await getHistory();
+  result.match(
+    (history) => {
+      if (history.length === 0) {
+        historyList.innerHTML = '<div class="empty-state">履歴はありません</div>';
+        return;
+      }
+
+      historyList.innerHTML = history.map(item => {
+        const date = new Date(item.timestamp).toLocaleString("ja-JP");
+        const scoreClass = item.total >= 80 ? "score-high" : item.total >= 60 ? "score-mid" : "score-low";
+        
+        return `
+          <div class="history-item" data-id="${item.id}">
+            <div class="history-meta">
+              <span class="history-date">${date}</span>
+              <span class="history-category">${item.category}</span>
+            </div>
+            <div class="history-title">${escapeHtml(item.title)}</div>
+            <div class="history-score ${scoreClass}">${item.total}点</div>
+          </div>
+        `;
+      }).join("");
+
+      // クリックイベント
+      document.querySelectorAll(".history-item").forEach(el => {
+        el.addEventListener("click", () => {
+          const id = (el as HTMLElement).dataset.id;
+          const item = history.find(h => h.id === id);
+          if (item) {
+            currentResult = item.result;
+            displayResult(item.result);
+            // 採点タブに切り替え
+            const scoringTabBtn = document.querySelector('.tab-btn[data-tab="scoring"]') as HTMLElement;
+            if (scoringTabBtn) scoringTabBtn.click();
+          }
+        });
+      });
+    },
+    (error) => {
+      historyList.innerHTML = `<div class="error-message">読み込みエラー: ${error.message}</div>`;
+    }
+  );
 }
 
 // 初期化実行

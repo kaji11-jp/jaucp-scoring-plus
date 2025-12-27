@@ -1,20 +1,9 @@
-import { load, Store } from "@tauri-apps/plugin-store";
 import { ResultAsync, okAsync } from "neverthrow";
 import { SettingsSchema, type Settings, type ProviderType } from "./schemas";
+import { DEFAULT_SYSTEM_PROMPT } from "./prompts";
+import { getStore } from "./store";
 
 const STORE_PATH = "settings.json";
-
-let storeInstance: Store | null = null;
-
-/**
- * Storeインスタンスを取得
- */
-async function getStore(): Promise<Store> {
-    if (!storeInstance) {
-        storeInstance = await load(STORE_PATH);
-    }
-    return storeInstance;
-}
 
 /**
  * デフォルト設定
@@ -25,6 +14,7 @@ const DEFAULT_SETTINGS: Settings = {
     geminiApiKey: undefined,
     cerebrasApiKey: undefined,
     selectedModel: undefined,
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
 };
 
 /**
@@ -33,12 +23,13 @@ const DEFAULT_SETTINGS: Settings = {
 export function loadSettings(): ResultAsync<Settings, Error> {
     return ResultAsync.fromPromise(
         (async () => {
-            const store = await getStore();
+            const store = await getStore(STORE_PATH);
             const provider = await store.get<ProviderType>("provider");
             const openrouterApiKey = await store.get<string>("openrouterApiKey");
             const geminiApiKey = await store.get<string>("geminiApiKey");
             const cerebrasApiKey = await store.get<string>("cerebrasApiKey");
             const selectedModel = await store.get<string>("selectedModel");
+            const systemPrompt = await store.get<string>("systemPrompt");
 
             // 旧形式からのマイグレーション
             const legacyApiKey = await store.get<string>("apiKey");
@@ -49,6 +40,7 @@ export function loadSettings(): ResultAsync<Settings, Error> {
                 geminiApiKey,
                 cerebrasApiKey,
                 selectedModel,
+                systemPrompt: systemPrompt || DEFAULT_SYSTEM_PROMPT,
             };
         })(),
         (error) => new Error(`設定読み込みエラー: ${error}`)
@@ -67,7 +59,7 @@ export function loadSettings(): ResultAsync<Settings, Error> {
 export function saveSettings(settings: Partial<Settings>): ResultAsync<void, Error> {
     return ResultAsync.fromPromise(
         (async () => {
-            const store = await getStore();
+            const store = await getStore(STORE_PATH);
             if (settings.provider !== undefined) {
                 await store.set("provider", settings.provider);
             }
@@ -82,6 +74,9 @@ export function saveSettings(settings: Partial<Settings>): ResultAsync<void, Err
             }
             if (settings.selectedModel !== undefined) {
                 await store.set("selectedModel", settings.selectedModel);
+            }
+            if (settings.systemPrompt !== undefined) {
+                await store.set("systemPrompt", settings.systemPrompt);
             }
             await store.save();
         })(),

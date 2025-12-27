@@ -1,6 +1,5 @@
 import { ResultAsync, errAsync, okAsync } from "neverthrow";
 import { ScoringResultSchema, type ScoringResult } from "./schemas";
-import { SCORING_PROMPT } from "./scoring";
 
 /**
  * Cerebras API エンドポイント
@@ -141,10 +140,11 @@ export function fetchCerebrasModels(apiKey: string): ResultAsync<CerebrasModel[]
 export function scoreArticleWithCerebras(
     apiKey: string,
     model: string,
-    articleContent: string
+    articleContent: string,
+    systemPrompt: string
 ): ResultAsync<ScoringResult, Error> {
     const messages: CerebrasChatMessage[] = [
-        { role: "system", content: SCORING_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: articleContent },
     ];
 
