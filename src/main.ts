@@ -1,4 +1,5 @@
 import { loadSettings, saveSettings, getCurrentApiKey } from "./lib/settings";
+import { generateOGPCanvas, downloadCanvasAsPng, type OGPOptions } from "./lib/ogp";
 import { fetchAvailableModels, getModelDisplayName } from "./lib/models";
 import { scoreArticle } from "./lib/scoring";
 import { fetchGeminiModels, scoreArticleWithGemini } from "./lib/gemini";
@@ -632,6 +633,114 @@ async function renderHistoryList() {
     }
   );
 }
+
+// ========================================
+// OGP画像タブ
+// ========================================
+function setupOGPTab() {
+  const titleInput = document.getElementById('ogp-title-input') as HTMLInputElement;
+  const descInput = document.getElementById('ogp-desc-input') as HTMLTextAreaElement;
+  const imageInput = document.getElementById('ogp-image-input') as HTMLInputElement;
+  const imageBtn = document.getElementById('ogp-image-btn') as HTMLButtonElement;
+  const imageName = document.getElementById('ogp-image-name') as HTMLSpanElement;
+  const imageClear = document.getElementById('ogp-image-clear') as HTMLButtonElement;
+  const previewBtn = document.getElementById('ogp-preview-btn') as HTMLButtonElement;
+  const downloadBtn = document.getElementById('ogp-download-btn') as HTMLButtonElement;
+  const previewCanvas = document.getElementById('ogp-preview-canvas') as HTMLCanvasElement;
+  const placeholder = document.getElementById('ogp-preview-placeholder') as HTMLDivElement;
+  const errorEl = document.getElementById('ogp-error') as HTMLDivElement;
+
+  let currentOGPCanvas: HTMLCanvasElement | null = null;
+  let selectedImageFile: File | null = null;
+
+  function showOGPError(msg: string) {
+    errorEl.textContent = msg;
+    errorEl.classList.remove('hidden');
+  }
+
+  function hideOGPError() {
+    errorEl.classList.add('hidden');
+  }
+
+  async function renderPreview() {
+    const title = titleInput.value.trim();
+    const description = descInput.value.trim();
+
+    if (!title || !description) {
+      showOGPError('タイトルと説明文を入力してください');
+      return;
+    }
+
+    hideOGPError();
+    previewBtn.disabled = true;
+    previewBtn.textContent = '生成中...';
+
+    try {
+      const options: OGPOptions = { title, description, imageFile: selectedImageFile };
+      const fullCanvas = await generateOGPCanvas(options);
+      currentOGPCanvas = fullCanvas;
+
+      // 600×315 にスケールダウンしてプレビューに描画
+      const ctx = previewCanvas.getContext('2d')!;
+      ctx.clearRect(0, 0, 600, 315);
+      ctx.drawImage(fullCanvas, 0, 0, 600, 315);
+
+      placeholder.classList.add('hidden');
+      previewCanvas.classList.remove('hidden');
+      downloadBtn.disabled = false;
+    } catch (e) {
+      showOGPError(`生成エラー: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      previewBtn.disabled = false;
+      previewBtn.textContent = 'プレビュー更新';
+    }
+  }
+
+  imageBtn.addEventListener('click', () => imageInput.click());
+
+  imageInput.addEventListener('change', () => {
+    const file = imageInput.files?.[0] ?? null;
+    selectedImageFile = file;
+    if (file) {
+      imageName.textContent = file.name;
+      imageClear.classList.remove('hidden');
+    } else {
+      imageName.textContent = '選択なし';
+      imageClear.classList.add('hidden');
+    }
+  });
+
+  imageClear.addEventListener('click', () => {
+    selectedImageFile = null;
+    imageInput.value = '';
+    imageName.textContent = '選択なし';
+    imageClear.classList.add('hidden');
+  });
+
+  previewBtn.addEventListener('click', renderPreview);
+
+  // タイトル/説明変更時に自動プレビュー更新（デバウンス）
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  function schedulePreview() {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (titleInput.value.trim() && descInput.value.trim()) {
+        renderPreview();
+      }
+    }, 600);
+  }
+  titleInput.addEventListener('input', schedulePreview);
+  descInput.addEventListener('input', schedulePreview);
+
+  downloadBtn.addEventListener('click', () => {
+    if (!currentOGPCanvas) return;
+    const title = titleInput.value.trim();
+    const safeName = title.replace(/[<>:"/\\|?*\s]/g, '_').substring(0, 40) || 'ogp';
+    downloadCanvasAsPng(currentOGPCanvas, `${safeName}.png`);
+  });
+}
+
+setupOGPTab();
 
 // 初期化実行
 init();

@@ -1,6 +1,10 @@
 MIT License
 
-Copyright (c) 2025 kongyo2
+Copyright (c) 2025-2026 kongyo2
+
+Portions of this software (src/lib/ogp.ts) are derived from ja-ucp-ogp
+(https://github.com/kongyo2/ja-ucp-ogp), also Copyright (c) kongyo2,
+licensed under the MIT License.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -37,6 +37,7 @@
       <button class="tab-btn active" data-tab="scoring">採点</button>
       <button class="tab-btn" data-tab="history">履歴</button>
       <button class="tab-btn" data-tab="utility">ユーティリティ</button>
+      <button class="tab-btn" data-tab="ogp">OGP画像</button>
     </nav>
 
     <!-- メインコンテンツ -->
@@ -148,6 +149,50 @@
               <h3>貼り付け用テンプレート</h3>
               <div id="wiki-template-list" class="template-list">
                 <!-- 動的に生成 -->
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- OGP画像タブ -->
+      <div id="tab-ogp" class="tab-content hidden">
+        <section class="ogp-section">
+          <h2>OGP画像生成</h2>
+          <p class="section-description">アンサイクロペディア記事のTwitter/Xシェア用OGP画像（1200×630px）を生成します。</p>
+
+          <div class="ogp-layout">
+            <div class="ogp-form">
+              <div class="form-group">
+                <label for="ogp-title-input">記事タイトル <span class="required">*</span></label>
+                <input type="text" id="ogp-title-input" class="form-input" placeholder="例: EVE Online" />
+              </div>
+              <div class="form-group">
+                <label for="ogp-desc-input">説明文 <span class="required">*</span></label>
+                <textarea id="ogp-desc-input" class="form-textarea ogp-desc-textarea" rows="4"
+                  placeholder="記事の概要を入力してください..."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="ogp-image-input">画像ファイル <span class="optional">（任意）</span></label>
+                <div class="file-input-wrapper">
+                  <input type="file" id="ogp-image-input" accept="image/*" class="file-input-hidden" />
+                  <button type="button" id="ogp-image-btn" class="btn btn-secondary">ファイルを選択</button>
+                  <span id="ogp-image-name" class="file-name-display">選択なし</span>
+                  <button type="button" id="ogp-image-clear" class="btn btn-icon ogp-clear-img hidden" title="画像を削除">✕</button>
+                </div>
+              </div>
+              <div class="ogp-actions">
+                <button id="ogp-preview-btn" class="btn btn-secondary">プレビュー更新</button>
+                <button id="ogp-download-btn" class="btn btn-primary" disabled>PNG ダウンロード</button>
+              </div>
+              <div id="ogp-error" class="ogp-error hidden"></div>
+            </div>
+
+            <div class="ogp-preview-area">
+              <div class="ogp-preview-label">プレビュー（50%表示）</div>
+              <canvas id="ogp-preview-canvas" class="ogp-preview-canvas hidden" width="600" height="315"></canvas>
+              <div id="ogp-preview-placeholder" class="ogp-preview-placeholder">
+                タイトルと説明文を入力するとプレビューが表示されます
               </div>
             </div>
           </div>

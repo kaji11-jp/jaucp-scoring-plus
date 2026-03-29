@@ -842,3 +842,129 @@ a:hover {
 .btn-danger:hover {
   background: rgba(239, 68, 68, 0.1);
 }
+
+/* ========================================
+   OGP画像タブ
+   ======================================== */
+
+.ogp-section {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+}
+
+.ogp-section h2 {
+  margin-bottom: var(--space-sm);
+}
+
+.ogp-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: var(--space-xl);
+  align-items: start;
+  margin-top: var(--space-lg);
+}
+
+.ogp-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.ogp-desc-textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.required {
+  color: var(--accent-primary);
+  font-size: 0.75rem;
+}
+
+.optional {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.file-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-name-display {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ogp-clear-img {
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.ogp-clear-img:hover {
+  color: var(--accent-primary);
+}
+
+.ogp-actions {
+  display: flex;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+
+.ogp-error {
+  color: var(--accent-primary);
+  font-size: 0.875rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.ogp-preview-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.ogp-preview-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ogp-preview-canvas {
+  width: 600px;
+  height: 315px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.ogp-preview-placeholder {
+  width: 600px;
+  height: 315px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  background: var(--bg-primary);
+}
