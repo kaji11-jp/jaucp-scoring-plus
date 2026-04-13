@@ -1,12 +1,19 @@
 name: 'Release'
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
         description: 'Release version (e.g., 1.0.0)'
         required: true
         type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-windows:
@@ -31,18 +38,38 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      - name: Normalize version input
+        id: version_info
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          # ユーザーが "v1.0.0" と入力しても "1.0.0" に正規化する
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Sync version to package.json and tauri.conf.json
+        shell: bash
+        run: |
+          # package.json と tauri.conf.json のバージョンをビルド前に書き換える
+          npm version ${{ steps.version_info.outputs.version }} --no-git-tag-version --allow-same-version
+          node -e "const fs=require('fs');const p='./src-tauri/tauri.conf.json';const c=JSON.parse(fs.readFileSync(p));c.version='${{ steps.version_info.outputs.version }}';fs.writeFileSync(p,JSON.stringify(c,null,2));"
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v${{ github.event.inputs.version }}
-          releaseName: 'JAUCP Scoring Tool v${{ github.event.inputs.version }}'
+          tagName: v${{ steps.version_info.outputs.version }}
+          releaseName: 'JAUCP Scoring Tool v${{ steps.version_info.outputs.version }}'
           releaseBody: |
-            ## JAUCP Scoring Tool v${{ github.event.inputs.version }}
+            ## JAUCP Scoring Tool v${{ steps.version_info.outputs.version }}
             
             日本語版アンサイクロペディアの記事採点ツール（Windows版）
             
@@ -51,8 +78,8 @@ jobs:
             2. ダウンロードしたファイルを実行してインストール
             
             ### 使用方法
-            1. 設定画面で OpenRouter API キーを入力
+            1. 設定画面で API キーを入力
             2. 使用するLLMモデルを選択
             3. 記事のウィキテキストを入力して「採点する」をクリック
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false

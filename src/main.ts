@@ -698,27 +698,6 @@ function setupOGPTab() {
 
   imageBtn.addEventListener('click', () => imageInput.click());
 
-  imageInput.addEventListener('change', () => {
-    const file = imageInput.files?.[0] ?? null;
-    selectedImageFile = file;
-    if (file) {
-      imageName.textContent = file.name;
-      imageClear.classList.remove('hidden');
-    } else {
-      imageName.textContent = '選択なし';
-      imageClear.classList.add('hidden');
-    }
-  });
-
-  imageClear.addEventListener('click', () => {
-    selectedImageFile = null;
-    imageInput.value = '';
-    imageName.textContent = '選択なし';
-    imageClear.classList.add('hidden');
-  });
-
-  previewBtn.addEventListener('click', renderPreview);
-
   // タイトル/説明変更時に自動プレビュー更新（デバウンス）
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   function schedulePreview() {
@@ -729,6 +708,29 @@ function setupOGPTab() {
       }
     }, 600);
   }
+
+  imageInput.addEventListener('change', () => {
+    const file = imageInput.files?.[0] ?? null;
+    selectedImageFile = file;
+    if (file) {
+      imageName.textContent = file.name;
+      imageClear.classList.remove('hidden');
+    } else {
+      imageName.textContent = '選択なし';
+      imageClear.classList.add('hidden');
+    }
+    schedulePreview();
+  });
+
+  imageClear.addEventListener('click', () => {
+    selectedImageFile = null;
+    imageInput.value = '';
+    imageName.textContent = '選択なし';
+    imageClear.classList.add('hidden');
+    schedulePreview();
+  });
+
+  previewBtn.addEventListener('click', renderPreview);
   titleInput.addEventListener('input', schedulePreview);
   descInput.addEventListener('input', schedulePreview);
 
