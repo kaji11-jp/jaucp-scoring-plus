@@ -6,7 +6,7 @@ import { load } from "@tauri-apps/plugin-store";
  */
 export interface IStore {
     get<T>(key: string): Promise<T | null>;
-    set(key: string, value: any): Promise<void>;
+    set(key: string, value: unknown): Promise<void>;
     save(): Promise<void>;
 }
 
@@ -15,7 +15,7 @@ export interface IStore {
  */
 class LocalStorageStore implements IStore {
     private path: string;
-    private data: Record<string, any>;
+    private data: Record<string, unknown>;
 
     constructor(path: string) {
         this.path = path;
@@ -32,7 +32,7 @@ class LocalStorageStore implements IStore {
         return (this.data[key] as T) ?? null;
     }
 
-    async set(key: string, value: any): Promise<void> {
+    async set(key: string, value: unknown): Promise<void> {
         this.data[key] = value;
     }
 
@@ -58,7 +58,7 @@ export async function getStore(path: string): Promise<IStore> {
 
     try {
         // Tauri環境かどうかの簡易チェック
-        // @ts-ignore
+        // @ts-expect-error window object might not have __TAURI_INTERNALS__ defined
         if (window.__TAURI_INTERNALS__) {
              const store = await load(path);
              // TauriのStoreはIStoreの要件を満たすはずだが、型定義が厳密でない場合があるのでキャスト
@@ -74,7 +74,7 @@ export async function getStore(path: string): Promise<IStore> {
              return wrapper;
         }
         throw new Error("Not in Tauri environment");
-    } catch (e) {
+    } catch {
         console.debug(`Falling back to LocalStorage for ${path}`);
         const store = new LocalStorageStore(path);
         stores[path] = store;

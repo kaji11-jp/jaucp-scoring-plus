@@ -1,0 +1,63 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22' # プロジェクトのバージョンに合わせて最新LTS等に設定
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run ESLint & Oxlint
+      run: npm run lint
+
+    - name: Run npm audit
+      # 妥協せずデフォルトの挙動を使用する（どれかのレベルの脆弱性が見つかれば失敗する）
+      run: npm audit
+
+  security-audit-rust:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Setup Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: "src-tauri -> target"
+        
+    - name: Run Clippy
+      run: |
+        cd src-tauri
+        cargo clippy -- -D warnings
+
+    - name: Install cargo-audit
+      run: cargo install cargo-audit
+      
+    - name: Run cargo audit
+      run: |
+        cd src-tauri
+        cargo audit

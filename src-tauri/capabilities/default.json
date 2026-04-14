@@ -7,7 +7,12 @@
   ],
   "permissions": [
     "core:default",
-    "opener:default",
-    "store:default"
+    {
+      "identifier": "store:default",
+      "allow": [
+        { "path": "settings.json" },
+        { "path": "history.json" }
+      ]
+    }
   ]
 }
